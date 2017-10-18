@@ -12,7 +12,7 @@ private let reuseIdentifier: String = "MyCell"
 
 fileprivate let searchBarHeight: Int = 40
 
-class MyCollectionViewController: UICollectionViewController, UICollectionViewDelegateFlowLayout, UISearchBarDelegate {
+class MyCollectionViewController: UICollectionViewController, UICollectionViewDelegateFlowLayout {
     
     var array: [MyData] = []
     var filtered: [MyData] = []
@@ -64,30 +64,6 @@ class MyCollectionViewController: UICollectionViewController, UICollectionViewDe
 
     }
     
-    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
-        isSearching = true;
-    }
-    
-    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
-        isSearching = false;
-    }
-    
-    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-        isSearching = false;
-    }
-    
-    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        isSearching = false;
-    }
-
-    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        filtered.removeAll(keepingCapacity: false)
-        let searchPredicate = searchBar.text!
-        filtered = array.filter( {$0.name.range(of: searchPredicate) != nil})
-        filtered.sort {$0.name < $1.name}
-        isSearching = (filtered.count == 0) ? false: true
-        collectionView?.reloadData()
-    }
     
     @objc func addDetails() {
         
