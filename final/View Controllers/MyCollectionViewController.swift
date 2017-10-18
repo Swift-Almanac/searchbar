@@ -8,11 +8,18 @@
 
 import UIKit
 
-private let reuseIdentifier = "MyCell"
+private let reuseIdentifier: String = "MyCell"
 
-class MyCollectionViewController: UICollectionViewController, UICollectionViewDelegateFlowLayout {
+fileprivate let searchBarHeight: Int = 40
+
+class MyCollectionViewController: UICollectionViewController, UICollectionViewDelegateFlowLayout, UISearchBarDelegate {
     
     var array: [MyData] = []
+    var filtered: [MyData] = []
+    var isSearching: Bool = false
+    var modRecord: Int = -1
+    
+    let searchBar = UISearchBar(frame: CGRect(x: 0, y: 0, width: Int(UIScreen.main.bounds.width), height: searchBarHeight))
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -21,10 +28,16 @@ class MyCollectionViewController: UICollectionViewController, UICollectionViewDe
         
         let firstRecord = MyData(name: "Audrey", age: 34, gender: true)
         let secondRecord = MyData(name: "Brian", age: 27, gender: false)
-        
+        let thirdRecord = MyData(name: "Charlie", age: 27, gender: false)
+        let fourthRecord = MyData(name: "Charlene", age: 27, gender: true)
+        let fifthRecord = MyData(name: "David", age: 27, gender: false)
+
         array.append( firstRecord)
         array.append( secondRecord)
-        
+        array.append( thirdRecord)
+        array.append( fourthRecord)
+        array.append( fifthRecord)
+
         array.sort { $0.name < $1.name }
         
         navigationItem.title = "My Database"
@@ -39,6 +52,41 @@ class MyCollectionViewController: UICollectionViewController, UICollectionViewDe
         navigationItem.rightBarButtonItem = addButton
 
         // Do any additional setup after loading the view.
+        
+        view.addSubview(searchBar)
+        searchBar.delegate = self
+        
+        
+    }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        searchBar.text = ""
+
+    }
+    
+    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        isSearching = true;
+    }
+    
+    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        isSearching = false;
+    }
+    
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        isSearching = false;
+    }
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        isSearching = false;
+    }
+
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        filtered.removeAll(keepingCapacity: false)
+        let searchPredicate = searchBar.text!
+        filtered = array.filter( {$0.name.range(of: searchPredicate) != nil})
+        filtered.sort {$0.name < $1.name}
+        isSearching = (filtered.count == 0) ? false: true
+        collectionView?.reloadData()
     }
     
     @objc func addDetails() {
@@ -58,11 +106,16 @@ class MyCollectionViewController: UICollectionViewController, UICollectionViewDe
     
     func modify(record: MyData) {
         
-        let indexPath = collectionView?.indexPathsForSelectedItems
-        
-        array.remove(at: indexPath![0].row)
+        if modRecord != -1 {
+            array.remove(at: modRecord)
+            modRecord = -1
+        } else {
+            let indexPath = collectionView?.indexPathsForSelectedItems
+            array.remove(at: indexPath![0].row)
+        }
         array.append(record)
         array.sort { $0.name < $1.name }
+
         collectionView?.reloadData()
     }
     
@@ -79,13 +132,26 @@ class MyCollectionViewController: UICollectionViewController, UICollectionViewDe
         let detailVC = MyViewController()
         detailVC.delegate = self
         detailVC.mode = .edit
-        detailVC.record = array[indexPath.row]
+        if isSearching {
+            detailVC.record = filtered[indexPath.row]
+            for record in array {
+                modRecord += 1
+                if (record.name == filtered[indexPath.row].name) {
+                    break;
+                }
+            }
+        }else {
+            detailVC.record = array[indexPath.row]
+        }
         navigationController?.pushViewController(detailVC, animated: true)
     }
     
 
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         // #warning Incomplete implementation, return the number of items
+        if isSearching {
+            return filtered.count
+        }
         return array.count
     }
 
@@ -96,7 +162,11 @@ class MyCollectionViewController: UICollectionViewController, UICollectionViewDe
         
 
         cell.backgroundColor = .yellow
-        cell.nameLabel.text = array[indexPath.row].name
+        if isSearching {
+            cell.nameLabel.text = filtered[indexPath.row].name
+        }else {
+            cell.nameLabel.text = array[indexPath.row].name
+        }
     
         return cell
     }
@@ -105,6 +175,11 @@ class MyCollectionViewController: UICollectionViewController, UICollectionViewDe
         
         return(CGSize(width: view.bounds.width, height: 44))
     }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
+        return CGSize(width: view.frame.width, height: CGFloat(searchBarHeight))
+    }
+
 
     // MARK: UICollectionViewDelegate
 
